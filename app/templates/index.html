@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Knowledge Base</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">AI Knowledge Base</h1>
+        
+        <!-- File Upload Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Upload Documents</h2>
+            <form id="uploadForm" class="space-y-4">
+                <div class="flex items-center justify-center w-full">
+                    <label class="flex flex-col w-full h-32 border-4 border-dashed hover:bg-gray-100 hover:border-gray-300">
+                        <div class="flex flex-col items-center justify-center pt-7">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400 group-hover:text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                            </svg>
+                            <p class="pt-1 text-sm tracking-wider text-gray-400 group-hover:text-gray-600">
+                                Select files</p>
+                        </div>
+                        <input type="file" class="opacity-0" multiple name="files[]" />
+                    </label>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                    Upload
+                </button>
+            </form>
+        </div>
+
+        <!-- Query Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-semibold mb-4">Ask Questions</h2>
+            <form id="queryForm" class="space-y-4">
+                <div>
+                    <textarea id="query" name="query" rows="4" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ask a question about your documents..."></textarea>
+                </div>
+                <button type="submit" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                    Ask
+                </button>
+            </form>
+            <div id="response" class="mt-6 p-4 bg-gray-50 rounded-lg hidden">
+                <h3 class="font-semibold mb-2">Response:</h3>
+                <p id="responseText" class="text-gray-700"></p>
+                <div id="sources" class="mt-4">
+                    <h4 class="font-semibold mb-2">Sources:</h4>
+                    <ul id="sourcesList" class="list-disc list-inside text-gray-600"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                alert(data.message);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error uploading files');
+            }
+        });
+
+        document.getElementById('queryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('query').value;
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query })
+                });
+                const data = await response.json();
+                
+                const responseDiv = document.getElementById('response');
+                const responseText = document.getElementById('responseText');
+                const sourcesList = document.getElementById('sourcesList');
+                
+                responseText.textContent = data.response;
+                sourcesList.innerHTML = data.sources.map(source => `<li>${source}</li>`).join('');
+                responseDiv.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error processing query');
+            }
+        });
+    </script>
+</body>
+</html>
