@@ -5,75 +5,332 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Knowledge Base</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .upload-area {
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            transform: translateY(-2px);
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">AI Knowledge Base</h1>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container max-w-4xl mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-2 text-center text-gray-800">AI Knowledge Base</h1>
+        <p class="text-center text-gray-600 mb-8">Upload documents and ask questions about them</p>
         
         <!-- File Upload Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Upload Documents</h2>
-            <form id="uploadForm" class="space-y-4">
-                <div class="flex items-center justify-center w-full">
-                    <label class="flex flex-col w-full h-32 border-4 border-dashed hover:bg-gray-100 hover:border-gray-300">
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8 transition-all duration-300 hover:shadow-md">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Upload Documents</h2>
+            <form id="uploadForm" class="space-y-6">
+                <div class="upload-area flex items-center justify-center w-full">
+                    <label class="flex flex-col w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                         <div class="flex flex-col items-center justify-center pt-7">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400 group-hover:text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400 group-hover:text-gray-600 mb-2" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
                             </svg>
-                            <p class="pt-1 text-sm tracking-wider text-gray-400 group-hover:text-gray-600">
-                                Select files</p>
+                            <p class="text-sm text-gray-600 mb-1">Drag and drop your files here</p>
+                            <p class="text-xs text-gray-500">or click to select files</p>
+                            <p id="selectedFiles" class="mt-2 text-sm text-gray-500"></p>
                         </div>
-                        <input type="file" class="opacity-0" multiple name="files[]" />
+                        <input type="file" class="opacity-0" multiple name="files[]" id="fileInput" />
                     </label>
                 </div>
-                <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
-                    Upload
+                
+                <!-- Upload Progress -->
+                <div id="uploadProgress" class="hidden fade-in">
+                    <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+                        <div id="progressBar" class="progress-bar bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p id="progressText" class="text-sm text-gray-600 text-center loading-dots"></p>
+                </div>
+
+                <!-- Upload Status -->
+                <div id="uploadStatus" class="hidden space-y-3 fade-in">
+                    <div id="successList" class="text-green-600 text-sm bg-green-50 rounded-lg p-3"></div>
+                    <div id="failureList" class="text-red-600 text-sm bg-red-50 rounded-lg p-3"></div>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Upload Files
                 </button>
             </form>
         </div>
 
         <!-- Query Section -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-semibold mb-4">Ask Questions</h2>
+        <div class="bg-white rounded-xl shadow-sm p-6 transition-all duration-300 hover:shadow-md">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Ask Questions</h2>
             <form id="queryForm" class="space-y-4">
                 <div>
-                    <textarea id="query" name="query" rows="4" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ask a question about your documents..."></textarea>
+                    <textarea 
+                        id="query" 
+                        name="query" 
+                        rows="4" 
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200"
+                        placeholder="Ask a question about your documents..."
+                    ></textarea>
                 </div>
-                <button type="submit" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
-                    Ask
+                <button type="submit" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Ask Question
                 </button>
             </form>
-            <div id="response" class="mt-6 p-4 bg-gray-50 rounded-lg hidden">
-                <h3 class="font-semibold mb-2">Response:</h3>
-                <p id="responseText" class="text-gray-700"></p>
+            <div id="response" class="mt-6 p-4 bg-gray-50 rounded-lg hidden fade-in">
+                <div class="flex items-center mb-2">
+                    <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="font-semibold text-gray-800">Response</h3>
+                </div>
+                <p id="responseText" class="text-gray-700 leading-relaxed"></p>
                 <div id="sources" class="mt-4">
-                    <h4 class="font-semibold mb-2">Sources:</h4>
-                    <ul id="sourcesList" class="list-disc list-inside text-gray-600"></ul>
+                    <div class="flex items-center mb-2">
+                        <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                        <h4 class="font-semibold text-gray-700">Sources</h4>
+                    </div>
+                    <ul id="sourcesList" class="list-disc list-inside text-gray-600 space-y-1"></ul>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = uploadForm.querySelector('button[type="submit"]');
+        const queryForm = document.getElementById('queryForm');
+        const queryButton = queryForm.querySelector('button[type="submit"]');
+
+        // File selection handler
+        fileInput.addEventListener('change', (e) => {
+            const fileList = Array.from(e.target.files);
+            const selectedFiles = document.getElementById('selectedFiles');
+            if (fileList.length > 0) {
+                selectedFiles.textContent = `Selected ${fileList.length} file(s): ${fileList.map(f => f.name).join(', ')}`;
+                uploadButton.removeAttribute('disabled');
+            } else {
+                selectedFiles.textContent = '';
+                uploadButton.setAttribute('disabled', 'true');
+            }
+        });
+
+        // Drag and drop handlers
+        const uploadArea = document.querySelector('.upload-area');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            uploadArea.classList.add('bg-gray-50', 'border-blue-500');
+        }
+
+        function unhighlight(e) {
+            uploadArea.classList.remove('bg-gray-50', 'border-blue-500');
+        }
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            const event = new Event('change');
+            fileInput.dispatchEvent(event);
+        }
+
+        // Upload form handler
+        uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
+            const fileList = Array.from(formData.getAll('files[]'));
+            
+            if (fileList.length === 0) {
+                alert('Please select files to upload');
+                return;
+            }
+
+            // Disable upload button
+            uploadButton.setAttribute('disabled', 'true');
+            uploadButton.innerHTML = '<span class="loading-dots">Uploading</span>';
+
+            // Show progress elements
+            const uploadProgress = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const successList = document.getElementById('successList');
+            const failureList = document.getElementById('failureList');
+            
+            uploadProgress.classList.remove('hidden');
+            uploadStatus.classList.remove('hidden');
+            successList.innerHTML = '';
+            failureList.innerHTML = '';
+            
+            // Reset progress
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Starting upload';
+            progressText.classList.add('loading-dots');
+            
             try {
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
-                const data = await response.json();
-                alert(data.message);
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const {value, done} = await reader.read();
+                    if (done) break;
+                    
+                    const lines = decoder.decode(value).split('\n').filter(line => line.trim());
+                    
+                    for (const line of lines) {
+                        try {
+                            const data = JSON.parse(line);
+                            
+                            // Update progress bar
+                            progressBar.style.width = data.progress + '%';
+                            
+                            switch (data.status) {
+                                case 'processing':
+                                    progressText.textContent = `Processing ${data.file}`;
+                                    break;
+                                    
+                                case 'complete':
+                                    break;
+                                    
+                                case 'finished':
+                                    progressText.textContent = 'Upload complete!';
+                                    progressText.classList.remove('loading-dots');
+                                    uploadButton.innerHTML = 'Upload Files';
+                                    uploadButton.removeAttribute('disabled');
+                                    
+                                    // Show success/failure lists with animation
+                                    if (data.successful_uploads.length > 0) {
+                                        successList.innerHTML = `
+                                            <div class="flex items-center">
+                                                <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                                <p class="font-semibold">Successfully uploaded:</p>
+                                            </div>
+                                            <ul class="mt-2 space-y-1">
+                                                ${data.successful_uploads.map(file => `
+                                                    <li class="flex items-center">
+                                                        <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+                                                        </svg>
+                                                        ${file}
+                                                    </li>
+                                                `).join('')}
+                                            </ul>`;
+                                    }
+                                    
+                                    if (data.failed_uploads.length > 0) {
+                                        failureList.innerHTML = `
+                                            <div class="flex items-center">
+                                                <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                                <p class="font-semibold">Failed to upload:</p>
+                                            </div>
+                                            <ul class="mt-2 space-y-1">
+                                                ${data.failed_uploads.map(file => `
+                                                    <li class="flex items-center">
+                                                        <svg class="w-4 h-4 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                        </svg>
+                                                        ${file}
+                                                    </li>
+                                                `).join('')}
+                                            </ul>`;
+                                    }
+                                    
+                                    // Clear file input
+                                    fileInput.value = '';
+                                    document.getElementById('selectedFiles').textContent = '';
+                                    break;
+                            }
+                        } catch (error) {
+                            console.error('Error parsing server message:', error);
+                        }
+                    }
+                }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error uploading files');
+                progressText.textContent = 'Upload failed';
+                progressText.classList.add('text-red-600');
+                progressText.classList.remove('loading-dots');
+                failureList.innerHTML = `
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p>Error uploading files. Please try again.</p>
+                    </div>`;
+                uploadButton.innerHTML = 'Upload Files';
+                uploadButton.removeAttribute('disabled');
             }
         });
 
-        document.getElementById('queryForm').addEventListener('submit', async (e) => {
+        // Query form handler
+        queryForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const query = document.getElementById('query').value;
+            
+            // Disable query button and show loading state
+            queryButton.setAttribute('disabled', 'true');
+            queryButton.innerHTML = '<span class="loading-dots">Processing</span>';
+            
             try {
                 const response = await fetch('/query', {
                     method: 'POST',
@@ -89,11 +346,23 @@
                 const sourcesList = document.getElementById('sourcesList');
                 
                 responseText.textContent = data.response;
-                sourcesList.innerHTML = data.sources.map(source => `<li>${source}</li>`).join('');
+                sourcesList.innerHTML = data.sources.map(source => `
+                    <li class="flex items-center">
+                        <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        ${source}
+                    </li>
+                `).join('');
+                
                 responseDiv.classList.remove('hidden');
+                responseDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error processing query');
+            } finally {
+                queryButton.removeAttribute('disabled');
+                queryButton.textContent = 'Ask Question';
             }
         });
     </script>

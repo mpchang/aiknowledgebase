@@ -10,7 +10,6 @@ http_archive(
     url = "https://github.com/bazelbuild/rules_python/releases/download/0.29.0/rules_python-0.29.0.tar.gz",
 )
 
-# Python setup
 load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
 py_repositories()
 
@@ -20,15 +19,12 @@ python_register_toolchains(
     python_version = "3.9",
 )
 
-load("@python3_9//:defs.bzl", "interpreter")
-
-# Python pip dependencies
 load("@rules_python//python:pip.bzl", "pip_parse")
 
+# Create a central repo to manage python dependencies
 pip_parse(
     name = "pip",
-    python_interpreter_target = interpreter,
-    requirements_lock = "//third_party:requirements_lock.txt",
+    requirements_lock = "//:requirements.txt",
 )
 
 load("@pip//:requirements.bzl", "install_deps")

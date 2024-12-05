@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-import openai
+from openai import OpenAI
 import logging
 from app.config.config import Config
 from app.services.container import ServiceContainer
@@ -40,11 +40,11 @@ def query():
             {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query_text}"}
         ]
 
-        # Set API key
-        openai.api_key = Config.OPENAI_API_KEY
+        # Initialize OpenAI client
+        client = OpenAI(api_key=Config.OPENAI_API_KEY)
         
         # Make API call
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages,
             temperature=0.7,
@@ -54,7 +54,7 @@ def query():
         # Return response with sources
         unique_sources = list(set(sources))
         return jsonify({
-            "response": response.choices[0].message["content"],
+            "response": response.choices[0].message.content,
             "sources": unique_sources
         })
 
