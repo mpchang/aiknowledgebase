@@ -14,7 +14,7 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     
     # OpenAI configuration
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    API_KEY = os.getenv("API_KEY")
     
     # Embedding configuration
     SIMILARITY_THRESHOLD = 0.3
